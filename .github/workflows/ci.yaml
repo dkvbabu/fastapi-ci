@@ -1,0 +1,46 @@
+name: CI Pipeline — Run Tests on Push
+
+# ── Trigger: run on push or pull_request to main branch
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run pytest
+    runs-on: ubuntu-latest    # GitHub-hosted runner (free Linux VM)
+
+    steps:
+      # Step 1: Check out the repo code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Step 3: Cache pip dependencies (speeds up future runs)
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # Step 4: Install all dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # Step 5: Run tests with verbose output
+      - name: Run pytest
+        run: pytest tests/ -v --tb=short
+
+      # Step 6: (Optional) Display test summary
+      - name: Test Summary
+        if: always()   # run even if previous step failed
+        run: echo "Tests completed.
